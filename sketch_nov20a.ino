@@ -67,11 +67,13 @@
 
 #include <SoftwareSerial.h>
 
-bool state_LED_BUILTIN = LOW;
+//bool state_LED_BUILTIN = LOW;
 const byte port_stepOut_X = 6;
 const byte port_stepOut_Y = 2;
+const byte port_stepOut_Z = 13;
 const byte port_direction_X = 7;
 const byte port_direction_Y = 14;
+const byte port_direction_Z = 15;
 const uint8_t pinRX = 5;
 const uint8_t pinTX = 4;
 const uint8_t port_power = 8;
@@ -90,6 +92,7 @@ bool state_power = false; //на 96 стр есть похожая переме�
 
 bool state_port_stepOut_X = LOW;
 bool state_port_stepOut_Y = LOW;
+bool state_port_stepOut_Z = LOW;
 
 SoftwareSerial softSerial(pinRX,pinTX); 
 
@@ -104,6 +107,7 @@ double theDifferenceIsActual = 0; //переменная для количест
 
 int16_t position_X = 0;
 int16_t position_Y = 0;
+int16_t position_Z = 0;
 
 //--------------------------------------------------------------------------------
 bool state_pow_on = false; //чтобы отследить первую из двух команд от дисплея. 
@@ -120,9 +124,9 @@ struct point {
 	int coordinate_Y_struct;
 };
 
-bool program = false;
-point cleaningTask[25]; 
-byte pos_cleaningTask = 0;
+bool program = false; // переменная для режима работы (ручное управление либо движение по заданным квадратам)
+point cleaningTask[25]; // массив для хранения заданных квадратов
+byte pos_cleaningTask = 0; // переменная для движения по массиву
 
 /*
 void impulse(int& T, long& pulses){
@@ -241,7 +245,7 @@ void position(){
 		}
 }
 
-void rotation(long pulses, int T, bool& state_port_stepOut, uint8_t& port_stepOut){ // убрать из rotation state_port_direction и port_direction
+void rotation(long pulses, int T, bool& state_port_stepOut, uint8_t& port_stepOut){ 
     bool state_port_limit_up = digitalRead(port_limit_up);
     bool state_port_limit_down = digitalRead(port_limit_down);
     bool state_port_direction;
@@ -250,7 +254,10 @@ void rotation(long pulses, int T, bool& state_port_stepOut, uint8_t& port_stepOu
 	}else 
 		if(axis_global==char(89)){
 			state_port_direction = digitalRead(port_direction_Y);
-		}
+		}else
+			if(axis_global==char(90)){
+				state_port_direction = digitalRead(port_direction_Z);
+			}
 	
     if(state_port_limit_up){
       if(!state_port_direction){
@@ -336,6 +343,10 @@ void action(char axis_local_action, float distance_local_action, int mySpeed, in
 		if(axis_local_action==char(89)){
 			state_port_stepOut = state_port_stepOut_Y;
 			port_stepOut = port_stepOut_Y;
+		}else 
+			if(axis_local_action==char(90)){
+				state_port_stepOut = state_port_stepOut_Z;
+				port_stepOut = port_stepOut_Z;
 		}else{
 			Serial.println("The axis is not connected");
 		}
@@ -424,17 +435,26 @@ void controlUart(){                          // Эта функция позво
 		  if(axis_global==char(89)){
 			digitalWrite(port_direction_Y, LOW);
 			action(char(89), distance_global, mySpeed, acceleration);
-		  }
-    }else if(cmd.equals("down")){
-		Serial.println("Поехали!");
-		if(axis_global==char(88)){
-			digitalWrite(port_direction_X, HIGH);
-			action(char(88), distance_global, mySpeed, acceleration);
-	  }else
-		if(axis_global==char(89)){
-			digitalWrite(port_direction_Y, HIGH);
-			action(char(89), distance_global, mySpeed, acceleration);
-		  }
+		  }else
+			  if(axis_global==char(90)){
+				digitalWrite(port_direction_Z, LOW);
+				action(char(90), distance_global, mySpeed, acceleration);
+			  }
+    }else 
+		if(cmd.equals("down")){
+			Serial.println("Поехали!");
+			if(axis_global==char(88)){
+				digitalWrite(port_direction_X, HIGH);
+				action(char(88), distance_global, mySpeed, acceleration);
+			}else
+				if(axis_global==char(89)){
+					digitalWrite(port_direction_Y, HIGH);
+					action(char(89), distance_global, mySpeed, acceleration);
+				  }else
+					  if(axis_global==char(90)){
+						digitalWrite(port_direction_Z, HIGH);
+						action(char(90), distance_global, mySpeed, acceleration);
+					  }
     }else if(cmd.equals("focus")){
       Serial.println("focus!");
       //focusOnTheTable();
@@ -495,6 +515,10 @@ void controlUart(){                          // Эта функция позво
 			axis_global = char(89);
 			Serial.println("the y axis selected");
 	}else 
+		if(cmd.equals("Z")){
+			axis_global = char(90);
+			Serial.println("the z axis selected");
+	}else
 		if(cmd.equals("program")){
 			program = true;
 			Serial.println("programming mode activated");
@@ -579,7 +603,7 @@ void controlUart(){                          // Эта функция позво
 				mySpeed = 30;
 				departure_to_the_square(coord, min_Y_1);
 				// включить лазер
-				mySpeed = 1;
+				mySpeed = 10;
 				departure_to_the_square(coord, max_Y_1);
 				// выключить лазер
 			}
@@ -589,7 +613,7 @@ void controlUart(){                          // Эта функция позво
 				mySpeed = 30;
 				departure_to_the_square(coord, min_Y_2);
 				// включить лазер
-				mySpeed = 1;
+				mySpeed = 10;
 				departure_to_the_square(coord, max_Y_2);
 				// выключить лазер
 			}
@@ -599,7 +623,7 @@ void controlUart(){                          // Эта функция позво
 				mySpeed = 30;
 				departure_to_the_square(coord, min_Y_3);
 				// включить лазер
-				mySpeed = 1;
+				mySpeed = 10;
 				departure_to_the_square(coord, max_Y_3);
 				// выключить лазер
 			}
@@ -609,7 +633,7 @@ void controlUart(){                          // Эта функция позво
 				mySpeed = 30;
 				departure_to_the_square(coord, min_Y_4);
 				// включить лазер
-				mySpeed = 1;
+				mySpeed = 10;
 				departure_to_the_square(coord, max_Y_4);
 				// выключить лазер
 			}
@@ -619,7 +643,7 @@ void controlUart(){                          // Эта функция позво
 				mySpeed = 30;
 				departure_to_the_square(coord, min_Y_5);
 				// включить лазер
-				mySpeed = 1;
+				mySpeed = 10;
 				departure_to_the_square(coord, max_Y_5);
 				// выключить лазер
 			}
@@ -1087,9 +1111,10 @@ void setup() {
 
   pinMode(port_stepOut_X, OUTPUT);  
   pinMode(port_stepOut_Y, OUTPUT);  
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(port_stepOut_Z, OUTPUT);
   pinMode(port_direction_X, OUTPUT);
   pinMode(port_direction_Y, OUTPUT);
+  pinMode(port_direction_Z, OUTPUT);
   pinMode(port_power, OUTPUT);
   pinMode(port_las, OUTPUT);
   pinMode(port_light, OUTPUT);
