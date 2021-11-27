@@ -1,97 +1,90 @@
+
+
+
+
+
+
+
+
 void controlUart(){                          // Эта функция позволяет управлять системой из монитора порта
   if (Serial.available()) {         // есть что на вход
-  //int16_t coordinate_X;
-  //int16_t coordinate_Y;
-  //String cmd;
     char cmd[15];
-    //cmd+=char(softSerial.read());
-  uint8_t pos = 0;
+	uint8_t pos = 0;
   
-  while(Serial.available()){
-    cmd[pos++] = char(Serial.read());
-    delay(10);
-  }
-  cmd[pos] = char(0);
-  Serial.println(cmd);
-  /*
-   for(int i=0; i<str.length(); i++){ // Проходимся по каждому символу строки str
-      //----------------------------------------------
-      if(memcmp(&str[i],"movingUp" , 8)==0){ // Если в строке str начиная с символа i находится текст "movingUp",  значит кнопка дисплея была включена
-        i+=7; 
-        digitalWrite(port_direction, LOW);
-        action(distance, mySpeed, acceleration);
-        theDifferenceIsActual += distance;
-      }else
-      //----------------------------------------------
-  */
+	while(Serial.available()){
+		cmd[pos++] = char(Serial.read());
+		delay(10);
+	}
+	cmd[pos] = char(0);
+	Serial.println(cmd);
+	  /*
+	   for(int i=0; i<str.length(); i++){ // Проходимся по каждому символу строки str
+		  //----------------------------------------------
+		  if(memcmp(&str[i],"movingUp" , 8)==0){ // Если в строке str начиная с символа i находится текст "movingUp",  значит кнопка дисплея была включена
+			i+=7; 
+			digitalWrite(port_direction, LOW);
+			action(distance, movementSpeed, acceleration);
+			theDifferenceIsActual += distance;
+		  }else
+		  //----------------------------------------------
+	  */
   for(uint8_t i=0; i<pos; i++){
     if (memcmp(&cmd[i], "dist", 4)==0) {
-    i+=3; // что делать в случае принятия одного символа
-    Serial.println(F("введите количество миллиметров"));      
-    distance_global = readdata();
-    Serial.print(F("distance: "));
-    Serial.println(distance_global);
-    //}else if (cmd.equals("sp")) {
-  }else 
-    if (memcmp(&cmd[i], "sp", 2)==0) {
-      i+=1;
-      Serial.println(F("введите скорость"));      
-      mySpeed = readdata();
-      Serial.print(F("скорость: "));
-      Serial.println(mySpeed);
-      Serial.print(F("T: "));
-      uint16_t T_tmp = (float(1.0f/(1600L/screwPitch))*1000000L)/mySpeed;
-      Serial.println(T_tmp);
-    //}else if (cmd.equals("acc")) {
-  }else 
-    if (memcmp(&cmd[i], "acc", 3)==0) {
-      i+=2;
-      Serial.println(F("введите ускорение"));       
-      acceleration = readdata();
-      Serial.print(F("acceleration: "));
-      Serial.println(acceleration);
+		i+=3; // что делать в случае принятия одного символа
+		Serial.println(F("введите количество миллиметров"));      
+		distance_global = readdata();
+		Serial.print(F("distance: "));
+		Serial.println(distance_global);
     }else 
-    //if (cmd.equals("start1")) {
-    if (memcmp(&cmd[i], "start1", 6)==0) {
-      i+=5;
-      Serial.println(F("Команда не используется"));
-      //action(distance, mySpeed, acceleration);
+		if (memcmp(&cmd[i], "sp", 2)==0) {
+		  i+=1;
+		  Serial.println(F("введите скорость"));      
+		  movementSpeed = readdata();
+		  Serial.print(F("скорость: "));
+		  Serial.println(movementSpeed);
+		  Serial.print(F("T: "));
+		  uint16_t T_tmp = (float(1.0f/(1600L/screwPitch))*1000000L)/movementSpeed;
+		  Serial.println(T_tmp);
+	}else 
+		if (memcmp(&cmd[i], "acc", 3)==0) {
+		  i+=2;
+		  Serial.println(F("введите ускорение"));       
+		  acceleration = readdata();
+		  Serial.print(F("acceleration: "));
+		  Serial.println(acceleration);
     }else 
-    //if(cmd.equals("up")){
-    if(memcmp(&cmd[i], "up", 2)==0){
-      i+=1;
-      Serial.println(F("Движение к нулю"));
-      
-      if(axis_global==char(88)){
-        digitalWrite(port_direction_X, LOW);
-        action(char(88), distance_global, mySpeed, acceleration);
-      }else
-        if(axis_global==char(89)){
-        digitalWrite(port_direction_Y, LOW);
-        action(char(89), distance_global, mySpeed, acceleration);
-        }else
-          if(axis_global==char(90)){
-          digitalWrite(port_direction_Z, LOW);
-          
-          action(char(90), distance_global, mySpeed, acceleration);
-          }
+		if(memcmp(&cmd[i], "up", 2)==0){
+			i+=1;
+			Serial.println(F("Движение к нулю"));
+
+			if(axis_global==char(88)){
+				digitalWrite(port_direction_X, LOW);
+				action(char(88), distance_global, movementSpeed, acceleration);
+			}else
+				if(axis_global==char(89)){
+					digitalWrite(port_direction_Y, LOW);
+					action(char(89), distance_global, movementSpeed, acceleration);
+				}else
+					if(axis_global==char(90)){
+						digitalWrite(port_direction_Z, LOW);
+						action(char(90), distance_global, movementSpeed, acceleration);
+					}
     }else 
-    //if(cmd.equals("down")){
     if(memcmp(&cmd[i], "down", 4)==0){
       i+=3;
       Serial.println(F("Поехали!"));
       if(axis_global==char(88)){
         digitalWrite(port_direction_X, HIGH);
-        action(char(88), distance_global, mySpeed, acceleration);
+        action(char(88), distance_global, movementSpeed, acceleration);
       }else
         if(axis_global==char(89)){
           digitalWrite(port_direction_Y, HIGH);
-          action(char(89), distance_global, mySpeed, acceleration);
+          action(char(89), distance_global, movementSpeed, acceleration);
           }else
             if(axis_global==char(90)){
             digitalWrite(port_direction_Z, HIGH);
             //float special_dist_for_Z = distance_global*2; // На Z оси другой шаг винта. Лавинообразный эффект. Комментарий в action
-            action(char(90), distance_global, mySpeed, acceleration);
+            action(char(90), distance_global, movementSpeed, acceleration);
             }
     }else 
     //if(cmd.equals("focus")){
@@ -100,9 +93,9 @@ void controlUart(){                          // Эта функция позво
       Serial.println(F("focus!"));
       //focusOnTheTable();
       //digitalWrite(port_direction, LOW);
-      //action(500, mySpeed, acceleration);
+      //action(500, movementSpeed, acceleration);
       //digitalWrite(port_direction, HIGH);
-      //action(100, mySpeed, acceleration);
+      //action(100, movementSpeed, acceleration);
     }else 
     //if(cmd.equals("sensorInit")){
     if(memcmp(&cmd[i], "sensorInit", 10)==0){
@@ -161,7 +154,7 @@ void controlUart(){                          // Эта функция позво
     //if(cmd.equals("home")){
     if(memcmp(&cmd[i], "home", 4)==0){
       i+=3;
-      mySpeed = 30;
+      movementSpeed = 30;
       int8_t coord_X_tmp = 0;
       int8_t coord_Y_tmp = 0;
       departure_to_the_square(coord_X_tmp, coord_Y_tmp);
@@ -187,238 +180,15 @@ void controlUart(){                          // Эта функция позво
       program = !program;
       Serial.println(F("programming mode activated"));
   }else 
-    //if(cmd.equals("program_false")){
-    if(memcmp(&cmd[i], "program_off", 11)==0){
-      i+=10;
-      Serial.println(F("programming mode disable"));
-      program = false;
-      pos_cleaningTask = 0;
-      for(byte i = 0; i < 100; ++i){
-        cleaningTask[i].coordinate_X_struct = -1;
-        cleaningTask[i].coordinate_Y_struct = -1;
-      }
-  }else
     //if(cmd.equals("start")){
     if(memcmp(&cmd[i], "start", 5)==0){
-      i+=4;
-      
-      int min_Y_1 = 550;
-      int min_Y_2 = 550;
-      int min_Y_3 = 550;
-      int min_Y_4 = 550;
-      int min_Y_5 = 550;
-      int min_Y_6 = 550;
-      int min_Y_7 = 550;
-      int min_Y_8 = 550;
-      int min_Y_9 = 550;
-      int min_Y_10 = 550;
-      
-      int max_Y_1 = -1;
-      int max_Y_2 = -1;
-      int max_Y_3 = -1;
-      int max_Y_4 = -1;
-      int max_Y_5 = -1;
-      int max_Y_6 = -1;
-      int max_Y_7 = -1;
-      int max_Y_8 = -1;
-      int max_Y_9 = -1;
-      int max_Y_10 = -1;
-      
-      //int coord;
-      
-      for(byte i = 0; i < pos_cleaningTask; ++i){
-        
-        if(cleaningTask[i].coordinate_X_struct == 25){
-          if(cleaningTask[i].coordinate_Y_struct < min_Y_1){
-            min_Y_1 = cleaningTask[i].coordinate_Y_struct;
-          }
-          if(cleaningTask[i].coordinate_Y_struct > max_Y_1){
-            max_Y_1 = cleaningTask[i].coordinate_Y_struct;
-          }
-        }
-        
-        if(cleaningTask[i].coordinate_X_struct == 75){
-          if(cleaningTask[i].coordinate_Y_struct < min_Y_2){
-            min_Y_2 = cleaningTask[i].coordinate_Y_struct;
-          }
-          if(cleaningTask[i].coordinate_Y_struct > max_Y_2){
-            max_Y_2 = cleaningTask[i].coordinate_Y_struct;
-          }
-        }
-        
-        if(cleaningTask[i].coordinate_X_struct == 125){
-          if(cleaningTask[i].coordinate_Y_struct < min_Y_3){
-            min_Y_3 = cleaningTask[i].coordinate_Y_struct;
-          }
-          if(cleaningTask[i].coordinate_Y_struct > max_Y_3){
-            max_Y_3 = cleaningTask[i].coordinate_Y_struct;
-          }
-        }
-        
-        if(cleaningTask[i].coordinate_X_struct == 175){
-          if(cleaningTask[i].coordinate_Y_struct < min_Y_4){
-            min_Y_4 = cleaningTask[i].coordinate_Y_struct;
-          }
-          if(cleaningTask[i].coordinate_Y_struct > max_Y_4){
-            max_Y_4 = cleaningTask[i].coordinate_Y_struct;
-          }
-        }
-        
-        if(cleaningTask[i].coordinate_X_struct == 225){
-          if(cleaningTask[i].coordinate_Y_struct < min_Y_5){
-            min_Y_5 = cleaningTask[i].coordinate_Y_struct;
-          }
-          if(cleaningTask[i].coordinate_Y_struct > max_Y_5){
-            max_Y_5 = cleaningTask[i].coordinate_Y_struct;
-          }
-        }
-        
-        if(cleaningTask[i].coordinate_X_struct == 275){
-          if(cleaningTask[i].coordinate_Y_struct < min_Y_6){
-            min_Y_6 = cleaningTask[i].coordinate_Y_struct;
-          }
-          if(cleaningTask[i].coordinate_Y_struct > max_Y_6){
-            max_Y_6 = cleaningTask[i].coordinate_Y_struct;
-          }
-        }
-        
-        if(cleaningTask[i].coordinate_X_struct == 325){
-          if(cleaningTask[i].coordinate_Y_struct < min_Y_7){
-            min_Y_7 = cleaningTask[i].coordinate_Y_struct;
-          }
-          if(cleaningTask[i].coordinate_Y_struct > max_Y_7){
-            max_Y_7 = cleaningTask[i].coordinate_Y_struct;
-          }
-        }
-        
-        if(cleaningTask[i].coordinate_X_struct == 375){
-          if(cleaningTask[i].coordinate_Y_struct < min_Y_8){
-            min_Y_8 = cleaningTask[i].coordinate_Y_struct;
-          }
-          if(cleaningTask[i].coordinate_Y_struct > max_Y_8){
-            max_Y_8 = cleaningTask[i].coordinate_Y_struct;
-          }
-        }
-        
-        if(cleaningTask[i].coordinate_X_struct == 425){
-          if(cleaningTask[i].coordinate_Y_struct < min_Y_9){
-            min_Y_9 = cleaningTask[i].coordinate_Y_struct;
-          }
-          if(cleaningTask[i].coordinate_Y_struct > max_Y_9){
-            max_Y_9 = cleaningTask[i].coordinate_Y_struct;
-          }
-        }
-        
-        if(cleaningTask[i].coordinate_X_struct == 475){
-          if(cleaningTask[i].coordinate_Y_struct < min_Y_10){
-            min_Y_10 = cleaningTask[i].coordinate_Y_struct;
-          }
-          if(cleaningTask[i].coordinate_Y_struct > max_Y_10){
-            max_Y_10 = cleaningTask[i].coordinate_Y_struct;
-          }
-        }
-      }
-      //const int16_t coordinate_X_arr[] PROGMEM = {25, 75, 125, 175, 225, 275, 325, 375, 425, 475};
-      //const int16_t coordinate_Y_arr[] PROGMEM = {0, 50, 100, 150, 200, 250, 300, 350, 400, 450};
-      if(max_Y_1>-1){
-        //coord = 25;
-        mySpeed = 30;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[0]), min_Y_1);
-        // включить лазер
-        mySpeed = 10;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[0]), max_Y_1);
-        // выключить лазер
-      }
-      
-      if(max_Y_2>-1){
-        //coord = 75;
-        mySpeed = 30;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[1]), min_Y_2);
-        // включить лазер
-        mySpeed = 10;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[1]), max_Y_2);
-        // выключить лазер
-      }
-      
-      if(max_Y_3>-1){
-        //coord = 125;
-        mySpeed = 30;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[2]), min_Y_3);
-        // включить лазер
-        mySpeed = 10;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[2]), max_Y_3);
-        // выключить лазер
-      }
-      
-      if(max_Y_4>-1){
-        //coord = 175;
-        mySpeed = 30;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[3]), min_Y_4);
-        // включить лазер
-        mySpeed = 10;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[3]), max_Y_4);
-        // выключить лазер
-      }
-      
-      if(max_Y_5>-1){
-        //coord = 225;
-        mySpeed = 30;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[4]), min_Y_5);
-        // включить лазер
-        mySpeed = 10;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[4]), max_Y_5);
-        // выключить лазер
-      }
-      
-      if(max_Y_6>-1){
-        //coord = 275;
-        mySpeed = 30;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[5]), min_Y_6);
-        // включить лазер
-        mySpeed = 10;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[5]), max_Y_6);
-        // выключить лазер
-      }
-      
-      if(max_Y_7>-1){
-        //coord = 325;
-        mySpeed = 30;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[6]), min_Y_7);
-        // включить лазер
-        mySpeed = 10;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[6]), max_Y_7);
-        // выключить лазер
-      }
-      
-      if(max_Y_8>-1){
-        //coord = 375;
-        mySpeed = 30;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[7]), min_Y_8);
-        // включить лазер
-        mySpeed = 10;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[7]), max_Y_8);
-        // выключить лазер
-      }
-      
-      if(max_Y_9>-1){
-        //coord = 425;
-        mySpeed = 30;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[8]), min_Y_9);
-        // включить лазер
-        mySpeed = 10;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[8]), max_Y_9);
-        // выключить лазер
-      }
-      
-      if(max_Y_10>-1){
-        //coord = 475;
-        mySpeed = 30;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[9]), min_Y_10);
-        // включить лазер
-        mySpeed = 10;
-        departure_to_the_square(pgm_read_word(&coordinate_X_arr[9]), max_Y_10);
-        // выключить лазер
-      }
+	i+=4;
+		  
+	int16_t arr_of_min_Y[cleaningSpeed] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
+	int16_t arr_of_max_Y[cleaningSpeed] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+
+	calculation_of_the_working_rectangle(arr_of_min_Y, arr_of_max_Y);
+	trajectory_movement(arr_of_min_Y, arr_of_max_Y);
       
   }else
     //if(cmd.equals("a0")){

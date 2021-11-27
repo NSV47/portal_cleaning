@@ -75,11 +75,12 @@
  * 271121
  * у меня возможны проблемы с использованием git. Последние изменения есть на зеленой флешке
  * //-----------------------------------------------------------------
+ * position_Z имеет целочисленный тип, а фокусировка будет с точностью 0,5 мм
+ * //-----------------------------------------------------------------
  */
 
 #include <SoftwareSerial.h>
 
-//bool state_LED_BUILTIN = LOW;
 const byte port_stepOut_X = 6;
 const byte port_stepOut_Y = 2;
 const byte port_stepOut_Z = 13;
@@ -96,9 +97,6 @@ const uint8_t port_limit_up = 12;
 const uint8_t port_limit_down = 3;
 const uint8_t port_laser_issue_enable = 16;
 
-//bool old_state_limit_up = LOW; //не используются
-//bool old_state_limit_down = LOW; //не используются
-//unsigned long timer_limit_up = 0; // удалить, если все работает, в других моделях тоже
 unsigned long timer_impulse = 0;
 
 bool state_power = false; //на 96 стр есть похожая переменная, может можно объединить???
@@ -109,10 +107,12 @@ bool state_port_stepOut_Z = LOW;
 
 SoftwareSerial softSerial(pinRX,pinTX); 
 
-int T = 625; // чем меньше, тем выше частота вращения
-int mySpeed = 300; //скорость в мм/сек, 1 об/сек = 1600 имп/сек = 0.000625 сек
+uint16_t T = 625; // чем меньше, тем выше частота вращения
+uint16_t movementSpeed = 300; //скорость в мм/сек, 1 об/сек = 1600 имп/сек = 0.000625 сек
+uint16_t idleSpeed = 300;
+uint16_t cleaningSpeed = 10;
 
-int acceleration = 100; // чем больше, с тем меньшей скорости начинаем движение
+uint16_t acceleration = 100; // чем больше, с тем меньшей скорости начинаем движение
 const byte screwPitch = 10; // Убрать const при настройке для оператора
 float distance_global = 1;
 
@@ -133,8 +133,8 @@ bool state_pow_on = false; //чтобы отследить первую из д�
 char axis_global = char(0);
 
 struct point {
-	int coordinate_X_struct;
-	int coordinate_Y_struct;
+	int16_t coordinate_X_struct;
+	int16_t coordinate_Y_struct;
 };
 
 bool program = false; // переменная для режима работы (ручное управление либо движение по заданным квадратам)
@@ -143,27 +143,6 @@ byte pos_cleaningTask = 0; // переменная для движения по 
 
 const int16_t coordinate_X_arr[] PROGMEM = {25, 75, 125, 175, 225, 275, 325, 375, 425, 475};
 const int16_t coordinate_Y_arr[] PROGMEM = {0, 50, 100, 150, 200, 250, 300, 350, 400, 450};
-
-/*
-void impulse(int& T, long& pulses){
-  pulses*=2;
-  while(pulses){
-    bool state_port_limit_up = digitalRead(port_limit_up);
-    bool state_port_limit_down = digitalRead(port_limit_down);
-    if(micros() - timer_impulse >= T){
-      state_port_stepOut = !state_port_stepOut;
-      digitalWrite(port_stepOut, state_port_stepOut);
-      timer_impulse = micros();
-      pulses--;
-    }
-    if(state_port_limit_up || state_port_limit_down){
-      pulses = 0; // модернизировать таким образом, чтобы при сбрасывании задания (задаем количество импульсов на перемещение) это учитывалось в опредеении местоположения (для функции выезда в положение 
-                  //фокуса на рабочий стол)
-    }
-    
-  }
-}
-*/
 
 void impulse(int& T, long& pulses, bool& state_port_stepOut, uint8_t& port_stepOut){
   pulses*=2;
@@ -186,55 +165,11 @@ void impulse(int& T, long& pulses, bool& state_port_stepOut, uint8_t& port_stepO
     
   }
 }
-/*
-void rotation(long pulses, int T){
-    bool state_port_limit_up = digitalRead(port_limit_up);
-    bool state_port_limit_down = digitalRead(port_limit_down);
-    bool state_port_direction = digitalRead(port_direction);
-    if(state_port_limit_up){
-      if(!state_port_direction){
-        if(millis()%500<=5){
-			delay(5); 
-			Serial.println("limit UP!");
-        }
-      }else{
-        impulse(T, pulses);
-        //state_port_limit_up = digitalRead(port_limit_up); //удалить если все работает
-      }
-    }else 
-      if(state_port_limit_down){
-        if(state_port_direction){
-          if(millis()%500<=5){
-            delay(5); 
-            Serial.println("limit DOWN!");
-          }
-        }else{
-          impulse(T, pulses);
-        }
-      }
-    else{
-      impulse(T, pulses);
-      state_port_limit_up = digitalRead(port_limit_up); //удалить если все работает
-    }
-    
-    //if(state_port_limit_down){
-      //if(state_port_direction){
-        //if(millis()%500<=5){delay(5); 
-          //Serial.println("limit DOWN!");
-        //}
-      //}else{
-        //impulse(T, pulses);
-      //}
-    //}//else{
-      //impulse(T, pulses);
-    //}
-}
-*/
 
 void printPosition(){
-	Serial.print("текущая позиция X:");
+	Serial.print(F("текущая позиция X:"));
 	Serial.println(position_X);
-	Serial.print("текущая позиция Y:");
+	Serial.print(F("текущая позиция Y:"));
 	Serial.println(position_Y);
 }
 
@@ -284,45 +219,27 @@ void rotation(long pulses, int T, bool& state_port_stepOut, uint8_t& port_stepOu
       if(!state_port_direction){
         if(millis()%500<=5){
 			delay(5); 
-			Serial.println("limit UP!");
+			Serial.println(F("limit UP!"));
         }
       }else{
         impulse(T, pulses, state_port_stepOut, port_stepOut);
-		
-        //state_port_limit_up = digitalRead(port_limit_up); //удалить если все работает
       }
     }else 
       if(state_port_limit_down){
         if(state_port_direction){
           if(millis()%500<=5){
             delay(5); 
-            Serial.println("limit DOWN!");
+            Serial.println(F("limit DOWN!"));
           }
         }else{
           impulse(T, pulses, state_port_stepOut, port_stepOut);
-		  
         }
       }
     else{
       impulse(T, pulses, state_port_stepOut, port_stepOut);
 	  
-      //state_port_limit_up = digitalRead(port_limit_up); //удалить если все работает
     }
 }
-
-/*
-void acceleration_function(int initialFreqiency, int finalFrequency){
-  for(int i = initialFreqiency; i > finalFrequency; i--){ 
-    rotation(8, i);
-  }
-}
-
-void bracking_function(int initialFreqiency, int finalFrequency){
-  for(int i = initialFreqiency; i < finalFrequency; i++){
-    rotation(8, i);
-  }
-}
-*/
 
 void acceleration_function(int initialFreqiency, int finalFrequency, bool& state_port_stepOut, uint8_t& port_stepOut){
   for(int i = initialFreqiency; i > finalFrequency; i--){ 
@@ -336,22 +253,8 @@ void bracking_function(int initialFreqiency, int finalFrequency, bool& state_por
     rotation(8, i, state_port_stepOut, port_stepOut);
   }
 }
-/*
-void action(float distance, int mySpeed, int acceleration){
-  int T = (float(1.0f/(1600L/screwPitch))*1000000L)/mySpeed/2;
-  long numberOfPulses = distance*1600L/screwPitch;
-  long pulsesOnTheAcceleration = (acceleration - T)*8L; //разбил оборот на 200 частей
-  if(pulsesOnTheAcceleration*2L>=numberOfPulses){  
-  acceleration_function(acceleration, acceleration-numberOfPulses/2/8);
-  bracking_function(acceleration-numberOfPulses/2/8, acceleration);
-  }else{
-    acceleration_function(acceleration, T);
-    rotation(numberOfPulses-pulsesOnTheAcceleration*2L, T);
-    bracking_function(T, acceleration);
-  }
-}
-*/
-void action(char axis_local_action, float distance_local_action, int mySpeed, int acceleration){
+
+void action(char axis_local_action, float distance_local_action, int movementSpeed, int acceleration){
 	distance_global = distance_local_action; // вылезла ошибка. Для Z axis пришлось ввести доп локальную переменную, чтобы увеличить dist в 2 раза. Но произошел лавинообразный эффект
 	axis_global = axis_local_action;
 	position(); // нет учета попадания на концевик!!!!
@@ -372,9 +275,9 @@ void action(char axis_local_action, float distance_local_action, int mySpeed, in
 				distance_local_action*=2;
 				port_stepOut = port_stepOut_Z;
 		}else{
-			Serial.println("The axis is not connected");
+			Serial.println(F("The axis is not connected"));
 		}
-	int T = (float(1.0f/(1600L/screwPitch))*1000000L)/mySpeed/2;
+	int T = (float(1.0f/(1600L/screwPitch))*1000000L)/movementSpeed/2;
 	long numberOfPulses = distance_local_action*1600L/screwPitch;
 	long pulsesOnTheAcceleration = (acceleration - T)*8L; //разбил оборот на 200 частей
 	if(pulsesOnTheAcceleration*2L>=numberOfPulses){  
@@ -407,20 +310,26 @@ int readdata(){                              //Эта функция возвр�
   return outByte;
 }
 
+/* ------------------------------------------------------------------------------------
+ * Система постоянно запоминает свои координаты. При получении нового задания из текущих
+ * координат вычитается значение заданной координаты и это является количеством миллиметров,
+ * которые необходио пройти. 
+ * ------------------------------------------------------------------------------------
+*/ 
 void departure_to_the_square(const int16_t& coordinate_X, const int16_t& coordinate_Y){
 	if(position_X - coordinate_X < 0){
 		digitalWrite(port_direction_X, HIGH);
 	}else{
 		digitalWrite(port_direction_X, LOW);
 	}
-	action(char(88), abs(position_X - coordinate_X), mySpeed, acceleration);
+	action(char(88), abs(position_X - coordinate_X), movementSpeed, acceleration);
 		
 	if(position_Y - coordinate_Y < 0){
 		digitalWrite(port_direction_Y, HIGH);
 	}else{
 		digitalWrite(port_direction_Y, LOW);
 	}
-	action(char(89), abs(position_Y-coordinate_Y), mySpeed, acceleration);
+	action(char(89), abs(position_Y-coordinate_Y), movementSpeed, acceleration);
 }
 
 void check_out_or_record(const int16_t& coordinate_X, const int16_t& coordinate_Y){
@@ -432,7 +341,6 @@ void check_out_or_record(const int16_t& coordinate_X, const int16_t& coordinate_
 	}
 }
 
-
 /*
 void movingToZero(double count){             // Эта функция перемещает систему в положение нуля
   if (count>0){
@@ -440,7 +348,7 @@ void movingToZero(double count){             // Эта функция перем
   }else{
     digitalWrite(port_direction, LOW);
   }
-  action(abs(count), mySpeed, acceleration);
+  action(abs(count), movementSpeed, acceleration);
 }
 */
 /*
@@ -448,9 +356,9 @@ void focusOnTheTable(){                      // Эта функция при п�
    Serial.println("focus on the table!");   
    if(!state_pow_on){
      digitalWrite(port_direction, LOW);
-     action(500, mySpeed, acceleration);
+     action(500, movementSpeed, acceleration);
      digitalWrite(port_direction, HIGH);
-     action(142, mySpeed, acceleration);
+     action(142, movementSpeed, acceleration);
      theDifferenceIsActual = 0;
    }else{
       movingToZero(theDifferenceIsActual);
@@ -458,6 +366,7 @@ void focusOnTheTable(){                      // Эта функция при п�
    }
 }
 */
+
 void terminal(){                             // Эта функция выводит в монитор порта информацию о настройках системы
   Serial.println(F("Готов"));
   Serial.println(F("---------------------------"));
@@ -466,13 +375,13 @@ void terminal(){                             // Эта функция вывод
   Serial.println(distance_global);
   Serial.print(F("+ "));
   Serial.print(F("Скорость: "));
-  Serial.println(mySpeed);
+  Serial.println(movementSpeed);
   Serial.print(F("+ "));
   Serial.print(F("Ускорение: "));
   Serial.println(acceleration);
   Serial.print(F("+ "));
   Serial.print(F("Скорость мкс: "));
-  int value_tmp = (float(1.0f/(1600L/screwPitch))*1000000L)/mySpeed;
+  int value_tmp = (float(1.0f/(1600L/screwPitch))*1000000L)/movementSpeed;
   Serial.println(value_tmp);
   Serial.println(F("---------------------------"));
 }
@@ -513,8 +422,263 @@ void settingTheDisplayButtonStates(){        // Эта функция устан
 }
 */
 
+uint16_t calculation_of_the_working_rectangle(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y){
+	  
+	  uint16_t max_x = 0;
+	  
+	  for(byte i = 0; i < pos_cleaningTask; ++i){
+		
+		if(cleaningTask[i].coordinate_X_struct == 25){
+			
+			max_x = 25; // переменная для визуализации рабочего прямоугольника
+			
+			if(cleaningTask[i].coordinate_Y_struct < arr_of_min_Y[0]){
+				arr_of_min_Y[0] = cleaningTask[i].coordinate_Y_struct;
+			}
+			if(cleaningTask[i].coordinate_Y_struct > arr_of_max_Y[0]){
+				arr_of_max_Y[0] = cleaningTask[i].coordinate_Y_struct;
+			}
+		}
+		
+		if(cleaningTask[i].coordinate_X_struct == 75){
+			
+			max_x = 75;
+			
+			if(cleaningTask[i].coordinate_Y_struct < arr_of_min_Y[1]){
+				arr_of_min_Y[1] = cleaningTask[i].coordinate_Y_struct;
+			}
+			if(cleaningTask[i].coordinate_Y_struct > arr_of_max_Y[1]){
+				arr_of_max_Y[1] = cleaningTask[i].coordinate_Y_struct;
+			}
+		}
+		
+		if(cleaningTask[i].coordinate_X_struct == 125){
+			
+			max_x = 125;
+			
+			if(cleaningTask[i].coordinate_Y_struct < arr_of_min_Y[2]){
+				arr_of_min_Y[2] = cleaningTask[i].coordinate_Y_struct;
+			}
+			if(cleaningTask[i].coordinate_Y_struct > arr_of_max_Y[2]){
+				arr_of_max_Y[2] = cleaningTask[i].coordinate_Y_struct;
+			}
+		}
+		
+		if(cleaningTask[i].coordinate_X_struct == 175){
+			
+			max_x = 175;
+			
+			if(cleaningTask[i].coordinate_Y_struct < arr_of_min_Y[3]){
+				arr_of_min_Y[3] = cleaningTask[i].coordinate_Y_struct;
+			}
+			if(cleaningTask[i].coordinate_Y_struct > arr_of_max_Y[3]){
+				arr_of_max_Y[3] = cleaningTask[i].coordinate_Y_struct;
+			}
+		}
+		
+		if(cleaningTask[i].coordinate_X_struct == 225){
+		  
+			max_x = 225;
+		  
+			if(cleaningTask[i].coordinate_Y_struct < arr_of_min_Y[4]){
+				arr_of_min_Y[4] = cleaningTask[i].coordinate_Y_struct;
+			}
+			if(cleaningTask[i].coordinate_Y_struct > arr_of_max_Y[4]){
+				arr_of_max_Y[4] = cleaningTask[i].coordinate_Y_struct;
+			}
+		}
+		
+		if(cleaningTask[i].coordinate_X_struct == 275){
+		  
+			max_x = 275;
+		  
+			if(cleaningTask[i].coordinate_Y_struct < arr_of_min_Y[5]){
+				arr_of_min_Y[5] = cleaningTask[i].coordinate_Y_struct;
+			}
+			if(cleaningTask[i].coordinate_Y_struct > arr_of_max_Y[5]){
+				arr_of_max_Y[5] = cleaningTask[i].coordinate_Y_struct;
+			}
+		}
+		
+		if(cleaningTask[i].coordinate_X_struct == 325){
+		  
+			max_x = 325;
+				  
+			if(cleaningTask[i].coordinate_Y_struct < arr_of_min_Y[6]){
+				arr_of_min_Y[6] = cleaningTask[i].coordinate_Y_struct;
+			}
+			if(cleaningTask[i].coordinate_Y_struct > arr_of_max_Y[6]){
+				arr_of_max_Y[6] = cleaningTask[i].coordinate_Y_struct;
+			}
+		}
+		
+		if(cleaningTask[i].coordinate_X_struct == 375){
+			
+			max_x = 375;
+			
+			if(cleaningTask[i].coordinate_Y_struct < arr_of_min_Y[7]){
+				arr_of_min_Y[7] = cleaningTask[i].coordinate_Y_struct;
+			}
+			if(cleaningTask[i].coordinate_Y_struct > arr_of_max_Y[7]){
+				arr_of_max_Y[7] = cleaningTask[i].coordinate_Y_struct;
+			}
+		}
+		
+		if(cleaningTask[i].coordinate_X_struct == 425){
+			
+			max_x = 425;
+			
+			if(cleaningTask[i].coordinate_Y_struct < arr_of_min_Y[8]){
+				arr_of_min_Y[8] = cleaningTask[i].coordinate_Y_struct;
+			}
+			if(cleaningTask[i].coordinate_Y_struct > arr_of_max_Y[8]){
+				arr_of_max_Y[8] = cleaningTask[i].coordinate_Y_struct;
+			}
+		}
+		
+		if(cleaningTask[i].coordinate_X_struct == 475){
+		  
+			max_x = 475;
+		  
+			if(cleaningTask[i].coordinate_Y_struct < arr_of_min_Y[9]){
+				arr_of_min_Y[9] = cleaningTask[i].coordinate_Y_struct;
+			}
+			if(cleaningTask[i].coordinate_Y_struct > arr_of_max_Y[9]){
+				arr_of_max_Y[9] = cleaningTask[i].coordinate_Y_struct;
+			}
+		}
+	  }
+	return max_x;
+}
 
+void visualization_function(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, uint8_t& pos, uint16_t& max_X){
+	
+	const uint8_t offset_X = 25; // константа (ее можно записать в flash) для визуализации, чтобы доехать недостающие 25 мм от квадрата
+	
+	movementSpeed = idleSpeed;
+	
+	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]); // выезд в заданную точку
+	departure_to_the_square(max_X+offset_X, arr_of_min_Y[pos]); // по X до максимума
+	departure_to_the_square(max_X+offset_X, arr_of_max_Y[pos]); // по Y до максимума
+	departure_to_the_square(max_X+offset_X, arr_of_min_Y[pos]);
+	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]);
+}
 
+void cleaning_process(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, uint8_t& pos){
+	movementSpeed = idleSpeed;
+	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]);
+	// включить лазер
+	digitalWrite(port_laser_issue_enable, HIGH);
+	movementSpeed = cleaningSpeed;
+	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_max_Y[pos]);
+	// выключить лазер
+	digitalWrite(port_laser_issue_enable, LOW);
+	movementSpeed = idleSpeed;
+}
+
+void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag_cleaning=true, uint16_t max_X=0){
+	uint8_t pos;
+	if(arr_of_max_Y[0]>-1){
+		pos = 0;
+
+		if(!flag_cleaning){
+			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
+		}else{
+			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
+		}
+		
+	}
+
+	if(arr_of_max_Y[1]>-1){
+		pos = 1;
+		
+		if(!flag_cleaning){
+			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
+		}else{
+			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
+		}
+	}
+
+	if(arr_of_max_Y[2]>-1){
+		pos = 2;
+		
+		if(!flag_cleaning){
+			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
+		}else{
+			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
+		}
+	}
+
+	if(arr_of_max_Y[3]>-1){
+		pos = 3;
+		
+		if(!flag_cleaning){
+			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
+		}else{
+			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
+		}
+	}
+
+	if(arr_of_max_Y[4]>-1){
+		pos = 4;
+		
+		if(!flag_cleaning){
+			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
+		}else{
+			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
+		}
+	}
+
+	if(arr_of_max_Y[5]>-1){
+		pos = 5;
+		
+		if(!flag_cleaning){
+			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
+		}else{
+			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
+		}
+	}
+
+	if(arr_of_max_Y[6]>-1){
+		pos = 6;
+		
+		if(!flag_cleaning){
+			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
+		}else{
+			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
+		}
+	}
+
+	if(arr_of_max_Y[7]>-1){
+		pos = 7;
+		
+		if(!flag_cleaning){
+			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
+		}else{
+			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
+		}
+	}
+
+	if(arr_of_max_Y[8]>-1){
+		pos = 8;
+		
+		if(!flag_cleaning){
+			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
+		}else{
+			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
+		}
+	}
+
+	if(arr_of_max_Y[9]>-1){
+		pos = 9;
+		
+		if(!flag_cleaning){
+			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
+		}else{
+			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
+		}
+	}
+}
 
 void setup() {
  
@@ -540,7 +704,7 @@ void setup() {
   //-----------------------------------------------------------------------
   //settingTheDisplayButtonStates();
   //-----------------------------------------------------------------------
-  Serial.println("Ready!");
+  Serial.println(F("Ready!"));
 }
 
 void loop() {
@@ -551,7 +715,7 @@ void loop() {
   
   if(!program){
 	pos_cleaningTask = 0;
-	mySpeed = 300;
+	movementSpeed = 300;
 		for(byte i = 0; i < 100; ++i){
 			cleaningTask[i].coordinate_X_struct = -1;
 			cleaningTask[i].coordinate_Y_struct = -1;
