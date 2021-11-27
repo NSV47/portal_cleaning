@@ -77,6 +77,8 @@
  * //-----------------------------------------------------------------
  * position_Z имеет целочисленный тип, а фокусировка будет с точностью 0,5 мм
  * //-----------------------------------------------------------------
+ * проверить a1, a2, b1, b2. Не доезжаю по Y одного квадрата из-за координат, необходимо к заданию добавлять по Y один квадрат
+ * //-----------------------------------------------------------------
  */
 
 #include <SoftwareSerial.h>
@@ -108,12 +110,12 @@ bool state_port_stepOut_Z = LOW;
 SoftwareSerial softSerial(pinRX,pinTX); 
 
 uint16_t T = 625; // чем меньше, тем выше частота вращения
-uint16_t movementSpeed = 300; //скорость в мм/сек, 1 об/сек = 1600 имп/сек = 0.000625 сек
-uint16_t idleSpeed = 300;
+uint16_t movementSpeed = 30; //скорость в мм/сек, 1 об/сек = 1600 имп/сек = 0.000625 сек
+uint16_t idleSpeed = 30;
 uint16_t cleaningSpeed = 10;
 
-uint16_t acceleration = 100; // чем больше, с тем меньшей скорости начинаем движение
-const byte screwPitch = 10; // Убрать const при настройке для оператора
+uint16_t acceleration = 300; // чем больше, с тем меньшей скорости начинаем движение
+const byte screwPitch = 8; // Убрать const при настройке для оператора
 float distance_global = 1;
 
 double theDifferenceIsActual = 0; //переменная для количества миллиметров до фокуса на столе фактическая
@@ -558,10 +560,11 @@ void visualization_function(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, uint8_
 	movementSpeed = idleSpeed;
 	
 	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]); // выезд в заданную точку
-	departure_to_the_square(max_X+offset_X, arr_of_min_Y[pos]); // по X до максимума
-	departure_to_the_square(max_X+offset_X, arr_of_max_Y[pos]); // по Y до максимума
-	departure_to_the_square(max_X+offset_X, arr_of_min_Y[pos]);
-	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]);
+	//departure_to_the_square(max_X+offset_X, arr_of_min_Y[pos]); // по X до максимума
+	//departure_to_the_square(max_X+offset_X, arr_of_max_Y[pos]); // по Y до максимума
+	//departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos])-offset_X, arr_of_max_Y[pos]);
+	//departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos])-offset_X, arr_of_min_Y[pos]);
+	//departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]); // выезд в заданную точку
 }
 
 void cleaning_process(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, uint8_t& pos){
@@ -715,7 +718,7 @@ void loop() {
   
   if(!program){
 	pos_cleaningTask = 0;
-	movementSpeed = 300;
+	movementSpeed = idleSpeed;
 		for(byte i = 0; i < 100; ++i){
 			cleaningTask[i].coordinate_X_struct = -1;
 			cleaningTask[i].coordinate_Y_struct = -1;

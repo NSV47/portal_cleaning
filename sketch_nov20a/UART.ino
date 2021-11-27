@@ -154,7 +154,7 @@ void controlUart(){                          // Эта функция позво
     //if(cmd.equals("home")){
     if(memcmp(&cmd[i], "home", 4)==0){
       i+=3;
-      movementSpeed = 30;
+      movementSpeed = idleSpeed;
       int8_t coord_X_tmp = 0;
       int8_t coord_Y_tmp = 0;
       departure_to_the_square(coord_X_tmp, coord_Y_tmp);
@@ -189,6 +189,16 @@ void controlUart(){                          // Эта функция позво
 
 	calculation_of_the_working_rectangle(arr_of_min_Y, arr_of_max_Y);
 	trajectory_movement(arr_of_min_Y, arr_of_max_Y);
+      
+  }else
+	  if(memcmp(&cmd[i], "visual", 6)==0){
+	i+=5;
+		  
+	int16_t arr_of_min_Y[cleaningSpeed] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
+	int16_t arr_of_max_Y[cleaningSpeed] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+	
+	uint16_t max_X = calculation_of_the_working_rectangle(arr_of_min_Y, arr_of_max_Y);
+	trajectory_movement(arr_of_min_Y, arr_of_max_Y, false, max_X);
       
   }else
     //if(cmd.equals("a0")){
