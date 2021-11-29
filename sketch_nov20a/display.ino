@@ -138,6 +138,8 @@ void controlFromTheDisplay(){
 				if(memcmp(&cmd[i], "visual", 6)==0){
 					i+=5;
 					
+					flag_visualization_is_done = true;
+					
 					int16_t arr_of_min_Y[cleaningSpeed] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
 					int16_t arr_of_max_Y[cleaningSpeed] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 					

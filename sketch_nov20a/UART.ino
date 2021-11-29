@@ -178,7 +178,11 @@ void controlUart(){                          // Эта функция позво
     if(memcmp(&cmd[i], "program", 7)==0){
       i+=6;
       program = !program;
-      Serial.println(F("programming mode activated"));
+	  if(program){
+		Serial.println(F("programming mode activated"));
+	  }else{
+		Serial.println(F("programming mode disabled"));
+	  }
   }else 
     //if(cmd.equals("start")){
     if(memcmp(&cmd[i], "start", 5)==0){
@@ -192,13 +196,15 @@ void controlUart(){                          // Эта функция позво
       
   }else
 	  if(memcmp(&cmd[i], "visual", 6)==0){
-	i+=5;
-		  
-	int16_t arr_of_min_Y[cleaningSpeed] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
-	int16_t arr_of_max_Y[cleaningSpeed] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+		i+=5;
+
+		flag_visualization_is_done = true;
+		
+		int16_t arr_of_min_Y[cleaningSpeed] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
+		int16_t arr_of_max_Y[cleaningSpeed] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 	
-	uint16_t max_X = calculation_of_the_working_rectangle(arr_of_min_Y, arr_of_max_Y);
-	trajectory_movement(arr_of_min_Y, arr_of_max_Y, false, max_X);
+		uint16_t max_X = calculation_of_the_working_rectangle(arr_of_min_Y, arr_of_max_Y);
+		trajectory_movement(arr_of_min_Y, arr_of_max_Y, false, max_X);
       
   }else
     //if(cmd.equals("a0")){

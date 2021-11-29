@@ -79,6 +79,9 @@
  * //-----------------------------------------------------------------
  * проверить a1, a2, b1, b2. Не доезжаю по Y одного квадрата из-за координат, необходимо к заданию добавлять по Y один квадрат
  * //-----------------------------------------------------------------
+ * 29.11.21
+ * Визуализация срабатывает каждый раз при срабатывании условия arr_of_max_Y[0]>-1, а должна работать только один раз
+ * //--------------------------------------------------------------------------------------------------------------------------
  */
 
 #include <SoftwareSerial.h>
@@ -146,6 +149,8 @@ byte pos_cleaningTask = 0; // переменная для движения по 
 const int16_t coordinate_X_arr[] PROGMEM = {25, 75, 125, 175, 225, 275, 325, 375, 425, 475};
 const int16_t coordinate_Y_arr[] PROGMEM = {0, 50, 100, 150, 200, 250, 300, 350, 400, 450};
 
+bool flag_visualization_is_done = false; // Визуализация срабатывает каждый раз при срабатывании условия arr_of_max_Y[0]>-1, а должна работать только один раз
+
 void impulse(int& T, long& pulses, bool& state_port_stepOut, uint8_t& port_stepOut){
   pulses*=2;
   while(pulses){
@@ -173,6 +178,7 @@ void printPosition(){
 	Serial.println(position_X);
 	Serial.print(F("текущая позиция Y:"));
 	Serial.println(position_Y);
+	Serial.println(F("--------------------"));
 }
 
 void position(){
@@ -555,16 +561,18 @@ uint16_t calculation_of_the_working_rectangle(int16_t* arr_of_min_Y, int16_t* ar
 
 void visualization_function(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, uint8_t& pos, uint16_t& max_X){
 	
+	flag_visualization_is_done = false;
+	
 	const uint8_t offset_X = 25; // константа (ее можно записать в flash) для визуализации, чтобы доехать недостающие 25 мм от квадрата
 	
 	movementSpeed = idleSpeed;
 	
 	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]); // выезд в заданную точку
-	//departure_to_the_square(max_X+offset_X, arr_of_min_Y[pos]); // по X до максимума
-	//departure_to_the_square(max_X+offset_X, arr_of_max_Y[pos]); // по Y до максимума
-	//departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos])-offset_X, arr_of_max_Y[pos]);
-	//departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos])-offset_X, arr_of_min_Y[pos]);
-	//departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]); // выезд в заданную точку
+	departure_to_the_square(max_X+offset_X, arr_of_min_Y[pos]); // по X до максимума
+	departure_to_the_square(max_X+offset_X, arr_of_max_Y[pos]); // по Y до максимума
+	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos])-offset_X, arr_of_max_Y[pos]);
+	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos])-offset_X, arr_of_min_Y[pos]);
+	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]); // выезд в заданную точку
 }
 
 void cleaning_process(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, uint8_t& pos){
@@ -579,14 +587,18 @@ void cleaning_process(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, uint8_t& pos
 	movementSpeed = idleSpeed;
 }
 
+/* 291121
+ * Визуализация срабатывает каждый раз при срабатывании условия arr_of_max_Y[0]>-1, а должна работать только один раз
+*/
 void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag_cleaning=true, uint16_t max_X=0){
 	uint8_t pos;
 	if(arr_of_max_Y[0]>-1){
 		pos = 0;
 
-		if(!flag_cleaning){
+		if(!flag_cleaning && flag_visualization_is_done){
 			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
-		}else{
+		}
+		if(flag_cleaning){
 			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
 		}
 		
@@ -595,9 +607,10 @@ void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag
 	if(arr_of_max_Y[1]>-1){
 		pos = 1;
 		
-		if(!flag_cleaning){
+		if(!flag_cleaning && flag_visualization_is_done){
 			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
-		}else{
+		}
+		if(flag_cleaning){
 			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
 		}
 	}
@@ -605,9 +618,10 @@ void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag
 	if(arr_of_max_Y[2]>-1){
 		pos = 2;
 		
-		if(!flag_cleaning){
+		if(!flag_cleaning && flag_visualization_is_done){
 			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
-		}else{
+		}
+		if(flag_cleaning){
 			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
 		}
 	}
@@ -615,9 +629,10 @@ void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag
 	if(arr_of_max_Y[3]>-1){
 		pos = 3;
 		
-		if(!flag_cleaning){
+		if(!flag_cleaning && flag_visualization_is_done){
 			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
-		}else{
+		}
+		if(flag_cleaning){
 			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
 		}
 	}
@@ -625,9 +640,10 @@ void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag
 	if(arr_of_max_Y[4]>-1){
 		pos = 4;
 		
-		if(!flag_cleaning){
+		if(!flag_cleaning && flag_visualization_is_done){
 			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
-		}else{
+		}
+		if(flag_cleaning){
 			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
 		}
 	}
@@ -635,9 +651,10 @@ void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag
 	if(arr_of_max_Y[5]>-1){
 		pos = 5;
 		
-		if(!flag_cleaning){
+		if(!flag_cleaning && flag_visualization_is_done){
 			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
-		}else{
+		}
+		if(flag_cleaning){
 			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
 		}
 	}
@@ -645,9 +662,10 @@ void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag
 	if(arr_of_max_Y[6]>-1){
 		pos = 6;
 		
-		if(!flag_cleaning){
+		if(!flag_cleaning && flag_visualization_is_done){
 			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
-		}else{
+		}
+		if(flag_cleaning){
 			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
 		}
 	}
@@ -655,9 +673,10 @@ void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag
 	if(arr_of_max_Y[7]>-1){
 		pos = 7;
 		
-		if(!flag_cleaning){
+		if(!flag_cleaning && flag_visualization_is_done){
 			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
-		}else{
+		}
+		if(flag_cleaning){
 			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
 		}
 	}
@@ -665,9 +684,10 @@ void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag
 	if(arr_of_max_Y[8]>-1){
 		pos = 8;
 		
-		if(!flag_cleaning){
+		if(!flag_cleaning && flag_visualization_is_done){
 			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
-		}else{
+		}
+		if(flag_cleaning){
 			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
 		}
 	}
@@ -675,9 +695,10 @@ void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag
 	if(arr_of_max_Y[9]>-1){
 		pos = 9;
 		
-		if(!flag_cleaning){
+		if(!flag_cleaning && flag_visualization_is_done){
 			visualization_function(arr_of_min_Y, arr_of_max_Y, pos, max_X);
-		}else{
+		}
+		if(flag_cleaning){
 			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
 		}
 	}
