@@ -153,6 +153,32 @@ bool flag_visualization_is_done = false; // Визуализация сраба�
 
 bool state_port_laser_issue_enable = false;
 
+/*
+uint8_t cancel(){
+	
+	uint8_t value = 0;
+	
+	if(softSerial.available()>0){         // Если есть данные принятые от дисплея, то ...
+		char cmd[15];
+		uint8_t pos = 0;
+		while(softSerial.available()){
+			cmd[pos++] = char(softSerial.read());
+			delay(10);
+		}
+		cmd[pos] = char(0);
+		Serial.println(cmd);                
+		for(int i=0; i<pos; i++){
+			if(memcmp(&cmd[i],"cancel" , 6)==0){ // Если в строке str начиная с символа i находится текст "movingUp",  значит кнопка дисплея была включена
+				i+=5; 
+				
+			}
+		}
+	}
+	
+	return value;
+}
+*/
+
 void impulse(int& T, long& pulses, bool& state_port_stepOut, uint8_t& port_stepOut){
   pulses*=2;
   while(pulses){
@@ -171,7 +197,7 @@ void impulse(int& T, long& pulses, bool& state_port_stepOut, uint8_t& port_stepO
 	  pulses = 0; // модернизировать таким образом, чтобы при сбрасывании задания (задаем количество импульсов на перемещение) это учитывалось в опредеении местоположения (для функции выезда в положение 
                   //фокуса на рабочий стол)
     }
-    
+	
   }
 }
 
@@ -327,6 +353,7 @@ int readdata(){                              //Эта функция возвр�
  * ------------------------------------------------------------------------------------
 */ 
 void departure_to_the_square(const int16_t& coordinate_X, const int16_t& coordinate_Y){
+	
 	if(position_X - coordinate_X < 0){
 		digitalWrite(port_direction_X, HIGH);
 	}else{
@@ -565,32 +592,48 @@ void visualization_function(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, uint8_
 	
 	flag_visualization_is_done = false;
 	
-	const uint8_t offset_X = 25; // константа (ее можно записать в flash) для визуализации, чтобы доехать недостающие 25 мм от квадрата
-	
+	const uint8_t offset_X = 25; // Нужна потому что, система ориентирона на центр квадрата. Константа (ее можно записать в flash) для визуализации, чтобы доехать недостающие 25 мм от квадрата
+	const uint8_t offset_Y = 50; // для того, чтобы доезжать последний квадрат. Константа (ее можно записать в flash) для визуализации, чтобы доехать недостающие 25 мм от квадрата
 	movementSpeed = idleSpeed;
 	
 	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]); // выезд в заданную точку
 	departure_to_the_square(max_X+offset_X, arr_of_min_Y[pos]); // по X до максимума
-	departure_to_the_square(max_X+offset_X, arr_of_max_Y[pos]); // по Y до максимума
-	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos])-offset_X, arr_of_max_Y[pos]);
+	departure_to_the_square(max_X+offset_X, arr_of_max_Y[pos]+offset_Y); // по Y до максимума
+	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos])-offset_X, arr_of_max_Y[pos]+offset_Y);
 	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos])-offset_X, arr_of_min_Y[pos]);
 	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]); // выезд в заданную точку
+	
+	softSerial.print(F("click bt3,1"));
+	softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+	softSerial.print(F("click bt3,0"));
+	softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+	
 }
 
 void cleaning_process(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, uint8_t& pos){
 	movementSpeed = idleSpeed;
+	const uint8_t offset_Y = 50; // для того, чтобы доезжать последний квадрат. Константа (ее можно записать в flash) для визуализации, чтобы доехать недостающие 25 мм от квадрата
 	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]);
 	// включить лазер
 	digitalWrite(port_laser_issue_enable, HIGH);
+	softSerial.print(F("click bt2,1"));
+	softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+	softSerial.print(F("click bt2,0"));
+	softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
 	movementSpeed = cleaningSpeed;
-	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_max_Y[pos]);
+	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_max_Y[pos]+offset_Y);
 	// выключить лазер
 	digitalWrite(port_laser_issue_enable, LOW);
+	softSerial.print(F("click bt2,1"));
+	softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+	softSerial.print(F("click bt2,0"));
+	softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
 	movementSpeed = idleSpeed;
 }
 
 /* 291121
  * Визуализация срабатывает каждый раз при срабатывании условия arr_of_max_Y[0]>-1, а должна работать только один раз
+ * Решено с помощью flag_visualization_is_done
 */
 void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag_cleaning=true, uint16_t max_X=0){
 	uint8_t pos;
@@ -704,6 +747,23 @@ void trajectory_movement(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, bool flag
 			cleaning_process(arr_of_min_Y, arr_of_max_Y, pos);
 		}
 	}
+	//-----------------------------------------------------------------------
+	if(flag_cleaning){
+		softSerial.print(F("click bt1,1")); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+		softSerial.print(char(255)+char(255)+char(255));
+		softSerial.print(F("click bt1,0")); 
+		softSerial.print(char(255)+char(255)+char(255));
+	}
+	
+	//while(!softSerial.available()){}                                          // Ждём ответа. Дисплей должен вернуть состояние кнопки bt0, отправив 4 байта данных, 
+                                                                            // где первый байт равен 0x01 или 0x00, а остальные 3 равны 0x00
+	//digitalWrite(port_power, softSerial.read());                              // Устанавливаем на выходе port_power состояние в соответствии с первым принятым байтом ответа дисплея
+	//delay(10);
+	//while(softSerial.available()){
+	//	softSerial.read();
+	//	delay(10);
+	//}
+	//-----------------------------------------------------------------------
 }
 
 void setup() {

@@ -53,10 +53,10 @@ void controlFromTheDisplay(){
 				// скорее всего этот блок кода для случая, когда кнопка питания лазера уже активирована, а основного питания еще нет. При этом выход контроллера включит
 				// питание лазера. Рассмотреть правильность, может быть не позволять активировать кнопку включения питания лазера без основного питания???
 				// Устанавливаем состояние кнопки включения питания лазера:                  
-				softSerial.print((String) "print bt1.val"+char(255)+char(255)+char(255)); // Отправляем команду дисплею: «print bt1.val» заканчивая её тремя байтами 0xFF
-				while(!softSerial.available()){}                                          // Ждём ответа. Дисплей должен вернуть состояние кнопки bt1, отправив 4 байта данных, где 1 байт равен 0x01 или 0x00, а остальные 3 равны 0x00
-				digitalWrite(port_power_laser, softSerial.read());       delay(10);               // Устанавливаем на выходе port_power_laser состояние в соответствии с первым принятым байтом ответа дисплея
-				while(softSerial.available()){softSerial.read(); delay(10);}
+				//softSerial.print((String) "print bt1.val"+char(255)+char(255)+char(255)); // Отправляем команду дисплею: «print bt1.val» заканчивая её тремя байтами 0xFF
+				//while(!softSerial.available()){}                                          // Ждём ответа. Дисплей должен вернуть состояние кнопки bt1, отправив 4 байта данных, где 1 байт равен 0x01 или 0x00, а остальные 3 равны 0x00
+				//digitalWrite(port_power_laser, softSerial.read());       delay(10);               // Устанавливаем на выходе port_power_laser состояние в соответствии с первым принятым байтом ответа дисплея
+				//while(softSerial.available()){softSerial.read(); delay(10);}
 				//------------------------------------------------------------------------------------------------------------------
 				//delay(500);          // удалить ели все работает
 				/*
@@ -115,6 +115,11 @@ void controlFromTheDisplay(){
 					int8_t coord_X_tmp = 0;
 					int8_t coord_Y_tmp = 0;
 					departure_to_the_square(coord_X_tmp, coord_Y_tmp);
+					
+					softSerial.print(F("click bt4,1")); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+					softSerial.print(char(255)+char(255)+char(255));
+					softSerial.print(F("click bt4,0")); 
+					softSerial.print(char(255)+char(255)+char(255));
 			}else
 				//if(cmd.equals("program")){
 				if(memcmp(&cmd[i], "program", 7)==0){
