@@ -188,8 +188,8 @@ void controlUart(){                          // Эта функция позво
     if(memcmp(&cmd[i], "start", 5)==0){
 	i+=4;
 		  
-	int16_t arr_of_min_Y[cleaningSpeed] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
-	int16_t arr_of_max_Y[cleaningSpeed] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+	int16_t arr_of_min_Y[10] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
+	int16_t arr_of_max_Y[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
 	calculation_of_the_working_rectangle(arr_of_min_Y, arr_of_max_Y);
 	trajectory_movement(arr_of_min_Y, arr_of_max_Y);
@@ -200,8 +200,8 @@ void controlUart(){                          // Эта функция позво
 
 		flag_visualization_is_done = true;
 		
-		int16_t arr_of_min_Y[cleaningSpeed] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
-		int16_t arr_of_max_Y[cleaningSpeed] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+		int16_t arr_of_min_Y[10] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
+		int16_t arr_of_max_Y[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 	
 		uint16_t max_X = calculation_of_the_working_rectangle(arr_of_min_Y, arr_of_max_Y);
 		trajectory_movement(arr_of_min_Y, arr_of_max_Y, false, max_X);

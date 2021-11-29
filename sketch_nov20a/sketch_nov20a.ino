@@ -151,6 +151,8 @@ const int16_t coordinate_Y_arr[] PROGMEM = {0, 50, 100, 150, 200, 250, 300, 350,
 
 bool flag_visualization_is_done = false; // Визуализация срабатывает каждый раз при срабатывании условия arr_of_max_Y[0]>-1, а должна работать только один раз
 
+bool state_port_laser_issue_enable = false;
+
 void impulse(int& T, long& pulses, bool& state_port_stepOut, uint8_t& port_stepOut){
   pulses*=2;
   while(pulses){

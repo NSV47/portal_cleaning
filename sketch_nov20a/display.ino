@@ -6,7 +6,7 @@ void controlFromTheDisplay(){
 		uint8_t pos = 0;
 		while(softSerial.available()){
 			cmd[pos++] = char(softSerial.read());
-			delay(cleaningSpeed);
+			delay(10);
 		}
 		cmd[pos] = char(0);
 		Serial.println(cmd);                
@@ -17,7 +17,7 @@ void controlFromTheDisplay(){
 				//action(distance, movementSpeed, acceleration);
 				//theDifferenceIsActual += distance;
 			}else
-			if(memcmp(&cmd[i],"movingDown", cleaningSpeed)==0){
+			if(memcmp(&cmd[i],"movingDown", 10)==0){
 				i+=9; 
 				//digitalWrite(port_direction, HIGH);
 				//state_LED_BUILTIN = !state_LED_BUILTIN;
@@ -55,8 +55,8 @@ void controlFromTheDisplay(){
 				// Устанавливаем состояние кнопки включения питания лазера:                  
 				softSerial.print((String) "print bt1.val"+char(255)+char(255)+char(255)); // Отправляем команду дисплею: «print bt1.val» заканчивая её тремя байтами 0xFF
 				while(!softSerial.available()){}                                          // Ждём ответа. Дисплей должен вернуть состояние кнопки bt1, отправив 4 байта данных, где 1 байт равен 0x01 или 0x00, а остальные 3 равны 0x00
-				digitalWrite(port_power_laser, softSerial.read());       delay(cleaningSpeed);               // Устанавливаем на выходе port_power_laser состояние в соответствии с первым принятым байтом ответа дисплея
-				while(softSerial.available()){softSerial.read(); delay(cleaningSpeed);}
+				digitalWrite(port_power_laser, softSerial.read());       delay(10);               // Устанавливаем на выходе port_power_laser состояние в соответствии с первым принятым байтом ответа дисплея
+				while(softSerial.available()){softSerial.read(); delay(10);}
 				//------------------------------------------------------------------------------------------------------------------
 				//delay(500);          // удалить ели все работает
 				/*
@@ -93,12 +93,12 @@ void controlFromTheDisplay(){
 				//distance = 0.5;
 			}else
 			//----------------------------------------------
-			if(memcmp(&cmd[i],"set_dist_1", cleaningSpeed)==0){
+			if(memcmp(&cmd[i],"set_dist_1", 10)==0){
 			i+=9;
 			//distance = 1;
 			}else
 			//----------------------------------------------
-			if(memcmp(&cmd[i],"set_dist_5", cleaningSpeed)==0){
+			if(memcmp(&cmd[i],"set_dist_5", 10)==0){
 			i+=9;
 			//distance = 5;
 			}else
@@ -126,8 +126,8 @@ void controlFromTheDisplay(){
 				if(memcmp(&cmd[i], "start", 5)==0){
 					i+=4;
 					
-					int16_t arr_of_min_Y[cleaningSpeed] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
-					int16_t arr_of_max_Y[cleaningSpeed] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+					int16_t arr_of_min_Y[10] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
+					int16_t arr_of_max_Y[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 					
 					calculation_of_the_working_rectangle(arr_of_min_Y, arr_of_max_Y);
 				  
@@ -140,12 +140,18 @@ void controlFromTheDisplay(){
 					
 					flag_visualization_is_done = true;
 					
-					int16_t arr_of_min_Y[cleaningSpeed] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
-					int16_t arr_of_max_Y[cleaningSpeed] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+					int16_t arr_of_min_Y[10] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
+					int16_t arr_of_max_Y[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 					
 					uint16_t max_X = calculation_of_the_working_rectangle(arr_of_min_Y, arr_of_max_Y);
 				  
 					trajectory_movement(arr_of_min_Y, arr_of_max_Y, false, max_X);
+			}else
+				if(memcmp(&cmd[i], "emission", 8)==0){
+					i+=7;
+					
+					state_port_laser_issue_enable = !state_port_laser_issue_enable;
+					digitalWrite(port_laser_issue_enable, state_port_laser_issue_enable);
 			}else
 				//if(cmd.equals("a0")){
 				if(memcmp(&cmd[i], "a0", 2)==0){
