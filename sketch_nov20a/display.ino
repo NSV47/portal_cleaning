@@ -116,10 +116,10 @@ void controlFromTheDisplay(){
 					int8_t coord_Y_tmp = 0;
 					departure_to_the_square(coord_X_tmp, coord_Y_tmp);
 					
-					softSerial.print(F("click bt4,1")); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
-					softSerial.print(char(255)+char(255)+char(255));
-					softSerial.print(F("click bt4,0")); 
-					softSerial.print(char(255)+char(255)+char(255));
+					//softSerial.print((String)"click bt4,1"); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+					//softSerial.print(char(255)+char(255)+char(255));
+					//softSerial.print((String)"click bt4,0"); 
+					//softSerial.print(char(255)+char(255)+char(255));
 			}else
 				//if(cmd.equals("program")){
 				if(memcmp(&cmd[i], "program", 7)==0){
@@ -138,7 +138,33 @@ void controlFromTheDisplay(){
 				  
 					//const int16_t coordinate_X_arr[] PROGMEM = {25, 75, 125, 175, 225, 275, 325, 375, 425, 475};
 					//const int16_t coordinate_Y_arr[] PROGMEM = {0, 50, cleaningSpeed0, 150, 200, 250, idleSpeed, 350, 400, 450};
+					
+					softSerial.print(F("print bt5.val"));
+					softSerial.print(char(255)+char(255)+char(255));
+					while(!softSerial.available()){}
+					uint8_t state_bt5 = softSerial.read();
+					Serial.print(F("состояние bt5: "));
+					Serial.println(state_bt5);
+					
+					
 					trajectory_movement(arr_of_min_Y, arr_of_max_Y);
+					
+					/*
+					//-----------------------------------------------------------------------
+					softSerial.print((String) "print bt1.val"+char(255)+char(255)+char(255));
+					while(!softSerial.available()){}
+					digitalWrite(port_power_laser, softSerial.read());         
+					state_LED_BUILTIN = !state_LED_BUILTIN;
+					digitalWrite(LED_BUILTIN, state_LED_BUILTIN);
+					delay(10);
+					while(softSerial.available()){
+					softSerial.read();
+					delay(10);
+					}
+					//-----------------------------------------------------------------------
+					*/
+					
+					
 			}else
 				if(memcmp(&cmd[i], "visual", 6)==0){
 					i+=5;

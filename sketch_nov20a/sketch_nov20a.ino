@@ -113,12 +113,12 @@ bool state_port_stepOut_Z = LOW;
 SoftwareSerial softSerial(pinRX,pinTX); 
 
 uint16_t T = 625; // чем меньше, тем выше частота вращения
-uint16_t movementSpeed = 30; //скорость в мм/сек, 1 об/сек = 1600 имп/сек = 0.000625 сек
-uint16_t idleSpeed = 30;
-uint16_t cleaningSpeed = 10;
+uint16_t movementSpeed = 300; //скорость в мм/сек, 1 об/сек = 1600 имп/сек = 0.000625 сек
+uint16_t idleSpeed = 300;
+uint16_t cleaningSpeed = 3;
 
-uint16_t acceleration = 300; // чем больше, с тем меньшей скорости начинаем движение
-const byte screwPitch = 8; // Убрать const при настройке для оператора
+uint16_t acceleration = 100; // чем больше, с тем меньшей скорости начинаем движение
+const byte screwPitch = 10; // Убрать const при настройке для оператора
 float distance_global = 1;
 
 double theDifferenceIsActual = 0; //переменная для количества миллиметров до фокуса на столе фактическая
@@ -603,10 +603,10 @@ void visualization_function(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, uint8_
 	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos])-offset_X, arr_of_min_Y[pos]);
 	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]); // выезд в заданную точку
 	
-	softSerial.print(F("click bt3,1"));
-	softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
-	softSerial.print(F("click bt3,0"));
-	softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+	//softSerial.print("click bt3,1"+char(255)+char(255)+char(255));
+	//softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+	//softSerial.print("click bt3,0"+char(255)+char(255)+char(255));
+	//softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
 	
 }
 
@@ -616,18 +616,18 @@ void cleaning_process(int16_t* arr_of_min_Y, int16_t* arr_of_max_Y, uint8_t& pos
 	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_min_Y[pos]);
 	// включить лазер
 	digitalWrite(port_laser_issue_enable, HIGH);
-	softSerial.print(F("click bt2,1"));
-	softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
-	softSerial.print(F("click bt2,0"));
-	softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+	//softSerial.print("click bt2,1"+char(255)+char(255)+char(255));
+	//softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+	//softSerial.print("click bt2,0"+char(255)+char(255)+char(255));
+	//softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
 	movementSpeed = cleaningSpeed;
 	departure_to_the_square(pgm_read_word(&coordinate_X_arr[pos]), arr_of_max_Y[pos]+offset_Y);
 	// выключить лазер
 	digitalWrite(port_laser_issue_enable, LOW);
-	softSerial.print(F("click bt2,1"));
-	softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
-	softSerial.print(F("click bt2,0"));
-	softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+	//softSerial.print("click bt2,1"+char(255)+char(255)+char(255));
+	//softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
+	//softSerial.print("click bt2,0"+char(255)+char(255)+char(255));
+	//softSerial.print(char(255)+char(255)+char(255)); // Отправляем команду дисплею, заканчивая её тремя байтами 0xFF
 	movementSpeed = idleSpeed;
 }
 
@@ -807,4 +807,9 @@ void loop() {
 			cleaningTask[i].coordinate_Y_struct = -1;
 		}
   }
+  
+  if(!state_port_laser_issue_enable){
+		digitalWrite(port_laser_issue_enable, state_port_laser_issue_enable);
+  }
+  
 }
