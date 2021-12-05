@@ -82,6 +82,8 @@
  * 29.11.21
  * Визуализация срабатывает каждый раз при срабатывании условия arr_of_max_Y[0]>-1, а должна работать только один раз
  * //--------------------------------------------------------------------------------------------------------------------------
+ * в loop происходиь отключение лазера. Доработать!
+ * //--------------------------------------------------------------------------------------------------------------------------
  */
 
 #include <SoftwareSerial.h>
@@ -113,12 +115,14 @@ bool state_port_stepOut_Z = LOW;
 SoftwareSerial softSerial(pinRX,pinTX); 
 
 uint16_t T = 625; // чем меньше, тем выше частота вращения
-uint16_t movementSpeed = 300; //скорость в мм/сек, 1 об/сек = 1600 имп/сек = 0.000625 сек
-uint16_t idleSpeed = 300;
+uint16_t movementSpeed = 30; //скорость в мм/сек, 1 об/сек = 1600 имп/сек = 0.000625 сек
+uint16_t idleSpeed = 30;
 uint16_t cleaningSpeed = 3;
+uint16_t draftSpeed = 3;
+uint16_t finishingSpeed = 5;
 
-uint16_t acceleration = 100; // чем больше, с тем меньшей скорости начинаем движение
-const byte screwPitch = 10; // Убрать const при настройке для оператора
+uint16_t acceleration = 300; // чем больше, с тем меньшей скорости начинаем движение
+const byte screwPitch = 8; // Убрать const при настройке для оператора
 float distance_global = 1;
 
 double theDifferenceIsActual = 0; //переменная для количества миллиметров до фокуса на столе фактическая
@@ -152,6 +156,8 @@ const int16_t coordinate_Y_arr[] PROGMEM = {0, 50, 100, 150, 200, 250, 300, 350,
 bool flag_visualization_is_done = false; // Визуализация срабатывает каждый раз при срабатывании условия arr_of_max_Y[0]>-1, а должна работать только один раз
 
 bool state_port_laser_issue_enable = false;
+
+bool emission_is_disabled = true;
 
 /*
 uint8_t cancel(){
@@ -772,6 +778,8 @@ void setup() {
   
   softSerial.begin(9600);
 
+	
+
   pinMode(port_stepOut_X, OUTPUT);  
   pinMode(port_stepOut_Y, OUTPUT);  
   pinMode(port_stepOut_Z, OUTPUT);
@@ -790,6 +798,11 @@ void setup() {
   //-----------------------------------------------------------------------
   //settingTheDisplayButtonStates();
   //-----------------------------------------------------------------------
+
+	//softSerial.print((String) "click bt5,1"+char(255)+char(255)+char(255));
+	//softSerial.print((String) "click bt5,0"+char(255)+char(255)+char(255));
+	
+	
   Serial.println(F("Ready!"));
 }
 
@@ -808,8 +821,10 @@ void loop() {
 		}
   }
   
-  if(!state_port_laser_issue_enable){
-		digitalWrite(port_laser_issue_enable, state_port_laser_issue_enable);
+  if(!state_port_laser_issue_enable && !emission_is_disabled){
+		digitalWrite(port_laser_issue_enable, state_port_laser_issue_enable); // выполняется постоянно и тормозит программу
+		
+		emission_is_disabled = true;
   }
   
 }

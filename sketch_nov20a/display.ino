@@ -2,15 +2,23 @@
 
 void controlFromTheDisplay(){
 	if(softSerial.available()>0){         // Если есть данные принятые от дисплея, то ...
-		char cmd[15];
+		//char cmd[15];
+		uint8_t cmd[15];
+		//String cmd;
 		uint8_t pos = 0;
 		while(softSerial.available()){
-			cmd[pos++] = char(softSerial.read());
+			cmd[pos++] = softSerial.read();
+			//cmd+=char(softSerial.read());
 			delay(10);
 		}
 		cmd[pos] = char(0);
-		Serial.println(cmd);                
-		for(int i=0; i<pos; i++){
+		//Serial.println(cmd);                
+		for(uint8_t j=0; j<pos; j++){
+			Serial.print(cmd[j]);
+		}
+		Serial.println();
+		for(uint8_t i=0; i<pos; i++){
+		//for(uint8_t i=0; i<cmd.length(); i++){
 			if(memcmp(&cmd[i],"movingUp" , 8)==0){ // Если в строке str начиная с символа i находится текст "movingUp",  значит кнопка дисплея была включена
 				i+=7; 
 				//digitalWrite(port_direction, LOW);
@@ -125,7 +133,11 @@ void controlFromTheDisplay(){
 				if(memcmp(&cmd[i], "program", 7)==0){
 				  i+=6;
 				  program = !program;
-				  Serial.println(F("programming mode activated"));
+				  if(program){
+					Serial.println(F("programming mode activated"));
+				  }else{
+					  Serial.println(F("programming mode disabled"));
+				  }
 			}else 
 				//if(cmd.equals("start")){
 				if(memcmp(&cmd[i], "start", 5)==0){
@@ -134,35 +146,11 @@ void controlFromTheDisplay(){
 					int16_t arr_of_min_Y[10] = {550, 550, 550, 550, 550, 550, 550, 550, 550, 550};
 					int16_t arr_of_max_Y[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 					
-					calculation_of_the_working_rectangle(arr_of_min_Y, arr_of_max_Y);
-				  
 					//const int16_t coordinate_X_arr[] PROGMEM = {25, 75, 125, 175, 225, 275, 325, 375, 425, 475};
-					//const int16_t coordinate_Y_arr[] PROGMEM = {0, 50, cleaningSpeed0, 150, 200, 250, idleSpeed, 350, 400, 450};
+					//const int16_t coordinate_Y_arr[] PROGMEM = {0, 50, 100, 150, 200, 250, idleSpeed, 350, 400, 450};
 					
-					softSerial.print(F("print bt5.val"));
-					softSerial.print(char(255)+char(255)+char(255));
-					while(!softSerial.available()){}
-					uint8_t state_bt5 = softSerial.read();
-					Serial.print(F("состояние bt5: "));
-					Serial.println(state_bt5);
-					
-					
+					calculation_of_the_working_rectangle(arr_of_min_Y, arr_of_max_Y);
 					trajectory_movement(arr_of_min_Y, arr_of_max_Y);
-					
-					/*
-					//-----------------------------------------------------------------------
-					softSerial.print((String) "print bt1.val"+char(255)+char(255)+char(255));
-					while(!softSerial.available()){}
-					digitalWrite(port_power_laser, softSerial.read());         
-					state_LED_BUILTIN = !state_LED_BUILTIN;
-					digitalWrite(LED_BUILTIN, state_LED_BUILTIN);
-					delay(10);
-					while(softSerial.available()){
-					softSerial.read();
-					delay(10);
-					}
-					//-----------------------------------------------------------------------
-					*/
 					
 					
 			}else
@@ -183,6 +171,33 @@ void controlFromTheDisplay(){
 					
 					state_port_laser_issue_enable = !state_port_laser_issue_enable;
 					digitalWrite(port_laser_issue_enable, state_port_laser_issue_enable);
+					
+					emission_is_disabled = false;
+					
+			}else
+				if(memcmp(&cmd[i], "n0", 2)==0){
+					i+=5;
+					
+					draftSpeed = cmd[i-3];
+					Serial.print(F("draftSpeed: "));
+					Serial.println(draftSpeed);
+			}else
+				if(memcmp(&cmd[i], "n1", 2)==0){
+					i+=5;
+					
+					finishingSpeed = cmd[i-3];
+					Serial.print(F("finishingSpeed: "));
+					Serial.println(finishingSpeed);
+			}else
+				if(memcmp(&cmd[i], "finishing", 9)==0){
+					i+=8;
+					
+					cleaningSpeed = finishingSpeed;
+			}else
+				if(memcmp(&cmd[i], "draft", 5)==0){
+					i+=4;
+					
+					cleaningSpeed = draftSpeed;
 			}else
 				//if(cmd.equals("a0")){
 				if(memcmp(&cmd[i], "a0", 2)==0){
@@ -202,7 +217,7 @@ void controlFromTheDisplay(){
 			  if(memcmp(&cmd[i], "a2", 2)==0){
 				i+=1; 
 				//coordinate_X = 25;
-				//coordinate_Y = cleaningSpeed0;
+				//coordinate_Y = 100;
 				check_out_or_record(pgm_read_word(&coordinate_X_arr[0]), pgm_read_word(&coordinate_Y_arr[2]));
 			}else 
 			  //if(cmd.equals("a3")){
@@ -272,7 +287,7 @@ void controlFromTheDisplay(){
 			  if(memcmp(&cmd[i], "b2", 2)==0){
 				i+=1; 
 				//coordinate_X = 75;
-				//coordinate_Y = cleaningSpeed0;
+				//coordinate_Y = 100;
 				check_out_or_record(pgm_read_word(&coordinate_X_arr[1]), pgm_read_word(&coordinate_Y_arr[2]));
 			}else
 			  //if(cmd.equals("b3")){
@@ -342,7 +357,7 @@ void controlFromTheDisplay(){
 			  if(memcmp(&cmd[i], "c2", 2)==0){
 				i+=1;
 				//coordinate_X = 125;
-				//coordinate_Y = cleaningSpeed0;
+				//coordinate_Y = 100;
 				check_out_or_record(pgm_read_word(&coordinate_X_arr[2]), pgm_read_word(&coordinate_Y_arr[2]));
 			}else 
 			  //if(cmd.equals("c3")){
@@ -412,7 +427,7 @@ void controlFromTheDisplay(){
 			  if(memcmp(&cmd[i], "d2", 2)==0){
 				i+=1;
 				//coordinate_X = 175;
-				//coordinate_Y = cleaningSpeed0;
+				//coordinate_Y = 100;
 				check_out_or_record(pgm_read_word(&coordinate_X_arr[3]), pgm_read_word(&coordinate_Y_arr[2]));
 			}else 
 			  //if(cmd.equals("d3")){
@@ -482,7 +497,7 @@ void controlFromTheDisplay(){
 			  if(memcmp(&cmd[i], "e2", 2)==0){
 				i+=1;
 				//coordinate_X = 225;
-				//coordinate_Y = cleaningSpeed0;
+				//coordinate_Y = 100;
 				check_out_or_record(pgm_read_word(&coordinate_X_arr[4]), pgm_read_word(&coordinate_Y_arr[2]));
 			}else 
 			  //if(cmd.equals("e3")){
@@ -552,7 +567,7 @@ void controlFromTheDisplay(){
 			  if(memcmp(&cmd[i], "f2", 2)==0){
 				i+=1;
 				//coordinate_X = 275;
-				//coordinate_Y = cleaningSpeed0;
+				//coordinate_Y = 100;
 				check_out_or_record(pgm_read_word(&coordinate_X_arr[5]), pgm_read_word(&coordinate_Y_arr[2]));
 			}else
 			  //if(cmd.equals("f3")){
@@ -622,7 +637,7 @@ void controlFromTheDisplay(){
 			  if(memcmp(&cmd[i], "g2", 2)==0){
 				i+=1;
 				//coordinate_X = 325;
-				//coordinate_Y = cleaningSpeed0;
+				//coordinate_Y = 100;
 				check_out_or_record(pgm_read_word(&coordinate_X_arr[6]), pgm_read_word(&coordinate_Y_arr[2]));
 			}else
 			  //if(cmd.equals("g3")){
@@ -762,7 +777,7 @@ void controlFromTheDisplay(){
 			  if(memcmp(&cmd[i], "k2", 2)==0){
 				i+=1;
 				//coordinate_X = 425;
-				//coordinate_Y = cleaningSpeed0;
+				//coordinate_Y = 100;
 				check_out_or_record(pgm_read_word(&coordinate_X_arr[8]), pgm_read_word(&coordinate_Y_arr[2]));
 			}else
 			  //if(cmd.equals("k3")){
@@ -832,7 +847,7 @@ void controlFromTheDisplay(){
 			  if(memcmp(&cmd[i], "l2", 2)==0){
 				i+=1;
 				//coordinate_X = 475;
-				//coordinate_Y = cleaningSpeed0;
+				//coordinate_Y = 100;
 				check_out_or_record(pgm_read_word(&coordinate_X_arr[9]), pgm_read_word(&coordinate_Y_arr[2]));
 			}else
 			  //if(cmd.equals("l3")){ // буква l маленькая (L)
