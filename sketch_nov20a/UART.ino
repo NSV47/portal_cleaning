@@ -82,9 +82,9 @@ void controlUart(){                          // Эта функция позво
           action(char(89), distance_global, movementSpeed, acceleration);
           }else
             if(axis_global==char(90)){
-            digitalWrite(port_direction_Z, HIGH);
-            //float special_dist_for_Z = distance_global*2; // На Z оси другой шаг винта. Лавинообразный эффект. Комментарий в action
-            action(char(90), distance_global, movementSpeed, acceleration);
+				digitalWrite(port_direction_Z, HIGH);
+				//float special_dist_for_Z = distance_global*2; // На Z оси другой шаг винта. Лавинообразный эффект. Комментарий в action
+				action(char(90), distance_global, movementSpeed, acceleration);
             }
     }else 
     //if(cmd.equals("focus")){

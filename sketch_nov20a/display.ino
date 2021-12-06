@@ -21,12 +21,20 @@ void controlFromTheDisplay(){
 		//for(uint8_t i=0; i<cmd.length(); i++){
 			if(memcmp(&cmd[i],"movingUp" , 8)==0){ // Если в строке str начиная с символа i находится текст "movingUp",  значит кнопка дисплея была включена
 				i+=7; 
+				
+				axis_global = char(90);
+				digitalWrite(port_direction_Z, LOW);
+				action(char(90), 1, movementSpeed, acceleration);
 				//digitalWrite(port_direction, LOW);
 				//action(distance, movementSpeed, acceleration);
 				//theDifferenceIsActual += distance;
 			}else
 			if(memcmp(&cmd[i],"movingDown", 10)==0){
 				i+=9; 
+				
+				axis_global = char(90);
+				digitalWrite(port_direction_Z, HIGH);
+				action(char(90), 1, movementSpeed, acceleration);
 				//digitalWrite(port_direction, HIGH);
 				//state_LED_BUILTIN = !state_LED_BUILTIN;
 				//digitalWrite(LED_BUILTIN, state_LED_BUILTIN);
